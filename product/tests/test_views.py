@@ -107,19 +107,16 @@ class TestProduct:
     product_list_endpoint = reverse('product-api:product-list')
     # merchant_product_list_endpoint = reverse('product-api:my-product-list')
     product_create_endpoint = reverse('product-api:product-create')
-    product_detail_endpoint = reverse(
-        'product-api:product-detail', kwargs={"product_slug": 'test-title'})
     product_update_delete_endpoint = reverse(
-        'product-api:product-update-delete', kwargs={"product_slug": 'test-title'})
+        'product-api:product-detail-update-delete', kwargs={"product_slug": 'test-title'})
     upload_file = open(os.path.join(settings.BASE_DIR,
                                     'static/img/no_avatar.jpg'), "rb")
     image = SimpleUploadedFile(
         name='no_avatar.jpg', content=upload_file.read(), content_type='image/jpeg')
     data = {'merchant': 1, 'category': 1, 'name': 'title', 'description': 'description', 'details': 'details',
-        'max_price': 700, 'discount_price': 500, 'total_in_stock': 50, 
-        'is_in_stock': True, 'is_active': True, 'variants':[{'variant': [1], 
-            "max_price": 60, "discount_price": 50, "total_in_stock": 20, 
-            "is_in_stock": True, "is_active": True, 'images':[{'image': image}]}]}
+        'total_in_stock': 50, 'is_in_stock': True, 'is_active': True, 'variants':[{'variant': [1], 
+        "max_price": 60, "discount_price": 50, "total_in_stock": 20, 
+        "is_in_stock": True, "is_active": True, 'images':[{'image': image}]}]}
     
     def test_product_list(self, db, new_product, api_client):
         """Test product retrieve list response status."""
@@ -144,7 +141,7 @@ class TestProduct:
 
     def test_product_detail(self, db, new_product, api_client):
         """Test product detail response status."""
-        response = api_client.get(self.product_detail_endpoint, format='json')
+        response = api_client.get(self.product_update_delete_endpoint, format='json')
         assert response.status_code == 200
 
     def test_product_update(self, db, new_merchant_user, new_product, api_client):

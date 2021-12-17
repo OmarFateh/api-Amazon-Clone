@@ -134,9 +134,8 @@ class TestProductSerializer:
     image = SimpleUploadedFile(
         name='no_avatar.jpg', content=upload_file.read(), content_type='image/jpeg')
     data = {'merchant': 1, 'category': 1, 'name': 'title', 'description': 'description', 
-            'details': 'details', 'max_price': 700, 'discount_price': 500, 'total_in_stock': 50, 
-            'is_in_stock': True, 'is_active': True, 'variants':[{'variant': [1], 
-            "max_price": 60, "discount_price": 50, "total_in_stock": 20, 
+            'details': 'details', 'total_in_stock': 50, 'is_in_stock': True, 'is_active': True, 
+            'variants':[{'variant': [1], "max_price": 60, "discount_price": 50, "total_in_stock": 20, 
             "is_in_stock": True, "is_active": True, 'images':[{'image': image}]}]}
 
     def test_create_valid_serializer(self, db, new_parent_category, new_attribute_value, new_product_variant, new_merchant):
@@ -144,13 +143,13 @@ class TestProductSerializer:
         serializer = ProductDetailSerializer(data=self.data, context={'is_update': False})
         assert serializer.is_valid() == True
 
-    def test_create_discount_exceeds_max_price(self, db, new_parent_category, new_attribute_value, new_product_variant, new_merchant):
-        """Test discount exceeds max price in create view."""
-        self.data['max_price'] = 400
-        serializer = ProductDetailSerializer(data=self.data, context={'is_update': False})
-        assert serializer.is_valid() == False
-        assert serializer.errors['discount_price'][0] == "Discount price can't be greater than maximum price."
-        self.data['max_price'] = 700
+    # def test_create_discount_exceeds_max_price(self, db, new_parent_category, new_attribute_value, new_product_variant, new_merchant):
+    #     """Test discount exceeds max price in create view."""
+    #     self.data['max_price'] = 400
+    #     serializer = ProductDetailSerializer(data=self.data, context={'is_update': False})
+    #     assert serializer.is_valid() == False
+    #     assert serializer.errors['discount_price'][0] == "Discount price can't be greater than maximum price."
+    #     self.data['max_price'] = 700
 
     def test_create_bigger_total_in_stock(self, db, new_parent_category, new_attribute_value, new_product_variant, new_merchant):
         """Test variant's total in stock exceeds product's total in stock in create view."""

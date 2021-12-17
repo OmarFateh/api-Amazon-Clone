@@ -251,7 +251,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Product list model serializer."""
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description", "max_price", "discount_price"]
+        fields = ["id", "name", "slug", "description",]
         read_only_fields = ['slug']      
 
 
@@ -261,19 +261,19 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description", "details", "category", "max_price", "discount_price", "variants",
+        fields = ["id", "name", "slug", "description", "details", "category", "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
 
-    def validate_discount_price(self, value):
-        """Validate that discount price is not greater than max price."""
-        is_update = self.context['is_update']
-        max_price = self.get_initial().get('max_price')
-        discount_price = value
-        product_obj = self.context.get('product_obj')
-        if compare_max_discount_price(max_price, discount_price, is_update, instance=product_obj):
-            raise serializers.ValidationError("Discount price can't be greater than maximum price.")
-        return value
+    # def validate_discount_price(self, value):
+    #     """Validate that discount price is not greater than max price."""
+    #     is_update = self.context['is_update']
+    #     max_price = self.get_initial().get('max_price')
+    #     discount_price = value
+    #     product_obj = self.context.get('product_obj')
+    #     if compare_max_discount_price(max_price, discount_price, is_update, instance=product_obj):
+    #         raise serializers.ValidationError("Discount price can't be greater than maximum price.")
+    #     return value
 
     def validate(self, data):
         """Validate than total in stock of variants are not greater than total of stock of product."""
@@ -314,7 +314,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         if 'variants' in validated_data.keys():  
             variants_data = validated_data.pop('variants')
             product_obj = Product.objects.create(**validated_data)
-            print("product_obj", product_obj)
             for variant in variants_data:
                 ProductVariantSerializer.create(ProductVariantSerializer(context={"product_id": product_obj.id}), 
                                     validated_data=variant)

@@ -39,8 +39,6 @@ class ProductFactory(factory.django.DjangoModelFactory):
     slug = "test-title"
     description = 'description'
     details = 'details'
-    max_price = 700
-    discount_price = 500
     total_in_stock = 50
     is_in_stock = True
     is_active = True

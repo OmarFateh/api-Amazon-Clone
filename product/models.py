@@ -15,8 +15,6 @@ def product_variant_image(instance, filename):
 
 class ProductCommonData(BaseTimestamp):
     """Product common data abstract model to be inherited from."""
-    max_price = models.DecimalField(max_digits=10, decimal_places=2)
-    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     total_in_stock = models.PositiveIntegerField()
     is_in_stock = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)
@@ -24,25 +22,30 @@ class ProductCommonData(BaseTimestamp):
     class Meta:
         abstract = True
 
-    @property
-    def actual_price(self):
-        # Return discount price if exists and if not, get max price. 
-        if self.discount_price:
-            return self.discount_price
-        else:
-            return self.max_price
 
-    @property
-    def get_price_discount_difference(self):
-        # Return the difference between max price and discount price.
-        if self.discount_price:
-            return self.max_price - self.discount_price
+class Attribute(BaseTimestamp):
+    """attribute can be like color, material, size, shape....etc"""
+    name = TitleCharField(max_length=64, unique=True, title=True)
 
-    @property
-    def get_price_discount_difference_percentage(self):
-        # Return the percentage difference between max price and discount price.
-        if self.discount_price:
-            return (self.get_price_discount_difference*100)// self.max_price
+    def __str__(self):
+        # Return attribute name
+        return self.name
+
+
+class AttributeValue(BaseTimestamp):
+    """
+    Values for the selected attribute like for size attr
+    the values can be Large, Medium, Small....etc
+    """
+    attribute = models.ForeignKey(Attribute, related_name='values', on_delete=models.CASCADE)
+    name = TitleCharField(max_length=64, title=True)
+
+    class Meta:
+        unique_together = ('attribute', 'name')
+
+    def __str__(self):
+        # Return attribute name & attribute value name
+        return f"{self.attribute.name} | {self.name}"
 
 
 class ProductManager(models.Manager):
@@ -77,44 +80,10 @@ class Product(ProductCommonData):
         return f"{self.name}"
 
 
-class Attribute(BaseTimestamp):
-    """attribute can be like color, material, size, shape....etc"""
-    name = TitleCharField(max_length=64, unique=True, title=True)
-
-    def __str__(self):
-        # Return attribute name
-        return self.name
-
-    # def save(self, *args, **kwargs):
-    #     """override save method, and save name with upper case for first charcater."""
-    #     self.name = self.name.title()
-    #     super(Attribute, self).save(*args, **kwargs)
-
-
-class AttributeValue(BaseTimestamp):
-    """
-    Values for the selected attribute like for size attr
-    the values can be Large, Medium, Small....etc
-    """
-    attribute = models.ForeignKey(Attribute, related_name='values', on_delete=models.CASCADE)
-    name = TitleCharField(max_length=64, title=True)
-
-    class Meta:
-        unique_together = ('attribute', 'name')
-
-    def __str__(self):
-        # Return attribute name & attribute value name
-        return f"{self.attribute.name} | {self.name}"
-
-    # def save(self, *args, **kwargs):
-    #     """override save method, and save name with upper case for first charcater."""
-    #     self.name = self.name.title()
-    #     super(AttributeValue, self).save(*args, **kwargs)
-
-
 class ProductVariant(ProductCommonData):
     """This model holds the values for price and combination of attributes for a product."""
-    max_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    max_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
     variant =  models.ManyToManyField(AttributeValue)
         
@@ -126,6 +95,26 @@ class ProductVariant(ProductCommonData):
     def merchant(self):
         # Return product's merchant 
         return self.product.merchant
+
+    @property
+    def actual_price(self):
+        # Return discount price if exists and if not, get max price. 
+        if self.discount_price:
+            return self.discount_price
+        else:
+            return self.max_price
+
+    @property
+    def get_price_discount_difference(self):
+        # Return the difference between max price and discount price.
+        if self.discount_price:
+            return self.max_price - self.discount_price
+
+    @property
+    def get_price_discount_difference_percentage(self):
+        # Return the percentage difference between max price and discount price.
+        if self.discount_price:
+            return (self.get_price_discount_difference*100) // self.max_price
 
 
 class ProductVariantImage(BaseTimestamp):

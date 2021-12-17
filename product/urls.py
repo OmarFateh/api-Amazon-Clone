@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (AttributeListCreateAPIView, AttributeUpdateDeleteAPIView, AttributeValueListCreateAPIView, 
                     AttributeValueUpdateDeleteAPIView,# ProductVariantListCreateAPIView, ProductVariantUpdateDeleteAPIView,
-                    ProductListAPIView, ProductDetailAPIView, ProductCreateAPIView, ProductUpdateDeleteAPIView, 
+                    ProductListAPIView, ProductCreateAPIView, ProductUpdateDeleteAPIView, 
                     ProductQuestionListAPIView, QuestionCreateAPIView, QuestionUpdateDeleteAPIView,
                     AnswerCreateAPIView, AnswerUpdateDeleteAPIView, ProductReviewListAPIView,
                     ReviewCreateAPIView, ReviewUpdateDeleteAPIView, WishlistProductAddDeleteAPIView)
@@ -25,8 +25,8 @@ urlpatterns = [
     # Product
     path('list/', ProductListAPIView.as_view(), name='product-list'),
     path('create/', ProductCreateAPIView.as_view(), name='product-create'),
-    path('<str:product_slug>/', ProductDetailAPIView.as_view(), name='product-detail'),
-    path('<str:product_slug>/update/delete/', ProductUpdateDeleteAPIView.as_view(), name='product-update-delete'),
+    # path('<str:product_slug>/', ProductDetailAPIView.as_view(), name='product-detail'),
+    path('<str:product_slug>/', ProductUpdateDeleteAPIView.as_view(), name='product-detail-update-delete'),
     # Question
     path('<str:product_slug>/questions/', ProductQuestionListAPIView.as_view(), name='product-question-list'),
     path('<str:product_slug>/questions/create/', QuestionCreateAPIView.as_view(), name='product-question-create'),

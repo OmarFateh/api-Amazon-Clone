@@ -4,9 +4,9 @@ from rest_framework import generics, mixins, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-from merchant.permissions import IsMerchant, IsMerchantOwner
-from customer.permissions import IsCustomer, IsCustomerOwner
 from category.permissions import IsAdmin
+from customer.permissions import IsCustomer, IsCustomerOwner
+from merchant.permissions import IsMerchant, IsMerchantOwner, IsMerchantOwnerOrReadOnly
 from .permissions import IsOwnerOrReadOnly
 from .models import Product, Attribute, AttributeValue, ProductVariant, ProductVariantImage, Question, Answer, Review, Wishlist
 from .serializers import (ProductListSerializer, ProductDetailSerializer, AttributeSerializer,
@@ -21,19 +21,6 @@ class ProductListAPIView(generics.ListAPIView):
     """Product list API view."""
     serializer_class = ProductListSerializer
     queryset = Product.objects.all()
-
-
-class ProductDetailAPIView(generics.RetrieveAPIView):
-    """Product detail API view."""
-    queryset = Product.objects.select_related('category', 'merchant')
-    serializer_class = ProductDetailSerializer
-
-    def get_object(self, *args, **kwargs):
-        # get product slug from the requested url.
-        product_slug = self.kwargs.get("product_slug", None)
-        obj = get_object_or_404(Product, slug=product_slug)
-        self.check_object_permissions(self.request, obj)
-        return obj
 
 
 class ProductCreateAPIView(generics.CreateAPIView):
@@ -64,23 +51,17 @@ class ProductUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     Merchant Product update delete API view.
     Only the authenticated merchant owner can update or delete it.
     """
-    permission_classes = [IsMerchantOwner]
+    permission_classes = [IsMerchantOwnerOrReadOnly]
     serializer_class = ProductDetailSerializer
+    queryset = Product.objects.select_related('category', 'merchant')
 
     def get_object(self, *args, **kwargs):
         # get product slug from the requested url.
         product_slug = self.kwargs.get("product_slug", None)
-        merchant = self.request.user.merchant
-        obj = get_object_or_404(Product, slug=product_slug, merchant=merchant)
-        self.check_object_permissions(self.request, obj)
+        obj = get_object_or_404(Product, slug=product_slug)
+        if self.request.user.is_authenticated:   
+            self.check_object_permissions(self.request, obj)
         return obj
-
-    def get_queryset(self, *args, **kwargs):
-        """
-        Return a list of all the products
-        for the currently authenticated merchant.
-        """
-        return Product.objects.select_related('merchant__user').filter(merchant=self.request.user.merchant)     
 
     def get_serializer_context(self, *args, **kwargs):
         return {"is_update":True, 'product_obj': self.get_object()}
