@@ -58,12 +58,9 @@ class UserSerializer(serializers.ModelSerializer):
         """Create and send activation email to new user."""
         request = self.context['request']
         user_type = self.context['user_type']
-        first_name = validated_data['first_name']
-        last_name = validated_data['last_name']
-        email = validated_data['email']
-        password = validated_data['password']
-        user_obj = User.objects.create_user(email=email, password=password,
-                        first_name=first_name, last_name=last_name, user_type=user_type)
+        email2 = validated_data.pop('email2')
+        password2 = validated_data.pop('password2')   
+        user_obj = User.objects.create_user(user_type=user_type, **validated_data)
         # send activation email
         send_activation_reset_email(request, user_obj, is_activation=True)                
         return user_obj
