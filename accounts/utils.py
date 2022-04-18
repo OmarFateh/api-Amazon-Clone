@@ -19,8 +19,8 @@ def send_activation_reset_email(request, user, is_activation=False, is_reset=Fal
     # activation email
     if is_activation:
         subject = 'Verfiy your Email'
-        reverse_url = "users-api:verfiy-email-confirm"
         token = str(RefreshToken.for_user(user).access_token)
+        absurl = f"http://localhost:3000/activate?token={token}" #"users-api:verfiy-email-confirm"
         params = {"token": token}
     # reset email
     elif is_reset:    
@@ -28,8 +28,8 @@ def send_activation_reset_email(request, user, is_activation=False, is_reset=Fal
         reverse_url = "users-api:password-reset-confirm"
         token = str(PasswordResetTokenGenerator().make_token(user))
         params = {"uidb64": uidb64, "token": token}
-    relative_link = reverse(reverse_url, kwargs=params)
-    absurl = f"http://{current_site}{relative_link}"
+        relative_link = reverse(reverse_url, kwargs=params)
+        absurl = f"http://{current_site}{relative_link}"
     message = f"""Hello {user.first_name} {user.last_name}, 
                 \nplease click on the link below to {subject}
                 \n{absurl}"""
