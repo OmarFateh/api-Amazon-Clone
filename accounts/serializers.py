@@ -16,14 +16,9 @@ from .utils import send_activation_reset_email
 
 class UserSerializer(serializers.ModelSerializer):
     """ A serializer for user registeration."""
-    email2 = serializers.EmailField(label='Confirm Email', write_only=True)
-    password2 = serializers.CharField(label='Confirm Password', 
-        style={'input_type': 'password'}, write_only=True)
-
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'email', 'email2', 
-            'password', 'password2']
+        fields = ['first_name', 'last_name', 'email', 'password']
         extra_kwargs = {"password": {'write_only': True}}
 
     def validate_password(self, value):
@@ -34,32 +29,17 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'password':e})
         return value      
 
-    def validate(self, data):
-        """
-        Validate that the two emails match.
-        Validate that the two passwords match.
-        """
-        email1 = data.get('email')
-        email2 = data.get('email2')
-        # check if the two emails match.
-        if email1 != email2:
-            raise serializers.ValidationError({'email':'The two Emails must match.'})
+    def validate_email(self, value):
+        """Validate the uniqueness of email."""
         # check if the email has already been used.
-        if User.objects.filter(email=email1).exists():
+        if User.objects.filter(email=value).exists():
             raise serializers.ValidationError({'email':"An account with this Email already exists."})
-        # check if the two passwords match.
-        password1 = data.get('password')
-        password2 = data.get('password2')
-        if password1 != password2:
-            raise serializers.ValidationError({'password':'The two Passwords must match.'})
-        return data
+        return value
 
     def create(self, validated_data):
         """Create and send activation email to new user."""
         request = self.context['request']
-        user_type = self.context['user_type']
-        email2 = validated_data.pop('email2')
-        password2 = validated_data.pop('password2')   
+        user_type = self.context['user_type']  
         user_obj = User.objects.create_user(user_type=user_type, **validated_data)
         # send activation email
         send_activation_reset_email(request, user_obj, is_activation=True)                
@@ -164,12 +144,10 @@ class PassowordChangeSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(label='Old Password', write_only=True)
     new_password1 = serializers.CharField(
         label='New Password', write_only=True)
-    new_password2 = serializers.CharField(
-        label='Confirm New Password', write_only=True)
 
     class Meta:
         model = User
-        fields = ['old_password', 'new_password1', 'new_password2']
+        fields = ['old_password', 'new_password1']
 
     def validate_old_password(self, value):
         """Validate old password."""
@@ -177,16 +155,6 @@ class PassowordChangeSerializer(serializers.ModelSerializer):
         # check if the password is correct
         if not request.user.check_password(value):
             raise serializers.ValidationError("Password is incorrect.")
-        return value
-
-    def validate_new_password1(self, value):
-        """Validate passwords."""
-        data = self.get_initial()
-        password1 = value
-        password2 = data.get('new_password2')
-        # check if the two passwords match
-        if password1 != password2:
-            raise serializers.ValidationError('The two Passwords must match.')
         return value
 
     def update(self, instance, validated_data):
@@ -221,23 +189,11 @@ class PasswordResetSerializer(serializers.Serializer):
     """Password reset serializer."""
     new_password1 = serializers.CharField(
         label='New Password', write_only=True)
-    new_password2 = serializers.CharField(
-        label='Confirm New Password', write_only=True)
     token = serializers.CharField(label='Token', write_only=True)
     uidb64 = serializers.CharField(label='UIDB64', write_only=True)
 
     class Meta:
-        fields = ['new_password1', 'new_password2', 'token', 'uidb64']
-
-    def validate_new_password1(self, value):
-        """Validate passwords."""
-        data = self.get_initial()
-        password1 = value
-        password2 = data.get('new_password2')
-        # check if the two passwords match
-        if password1 != password2:
-            raise serializers.ValidationError('The two Passwords must match.')
-        return value
+        fields = ['new_password1', 'token', 'uidb64']
 
     def validate(self, data):
         """Validate entered data."""
