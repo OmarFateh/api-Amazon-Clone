@@ -125,26 +125,42 @@ class RequestPasswordResetEmailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class PasswordResetTokenCheckAPIView(APIView):
-    """Password reset token check API view."""
+# class PasswordResetTokenCheckAPIView(APIView):
+#     """Password reset token check API view."""
 
-    def get(self, request, uidb64, token, *args, **kwargs):
-        """Check if the token is valid, and return it and uidb64."""
-        try:
-            # decode the user's id and get the user by id.
-            user_id = smart_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=user_id)
-            # check if the token is valid.
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
-            return Response({"success": "Credintials are Valid", "uidb64": uidb64, "token": token}, status.HTTP_200_OK)
-        except DjangoUnicodeDecodeError:
-            return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
+#     def get(self, request, uidb64, token, *args, **kwargs):
+#         """Check if the token is valid, and return it and uidb64."""
+#         try:
+#             # decode the user's id and get the user by id.
+#             user_id = smart_str(urlsafe_base64_decode(uidb64))
+#             user = User.objects.get(id=user_id)
+#             # check if the token is valid.
+#             if not PasswordResetTokenGenerator().check_token(user, token):
+#                 return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
+#             return Response({"success": "Credintials are Valid", "uidb64": uidb64, "token": token}, status.HTTP_200_OK)
+#         except DjangoUnicodeDecodeError:
+#             return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class PasswordResetFormAPIView(generics.GenericAPIView):
     """Password reset form API view."""
     serializer_class = PasswordResetSerializer
+
+    def get(self, request, uidb64, token, *args, **kwargs):
+        """Check if the token is valid, and return it and uidb64."""
+        try:
+            # decode the user's id and get the user by id.
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
+            user = User.objects.get(id=payload['user_id'])
+            # check if the token is valid.
+            if not user:
+                return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"success": "Credintials are Valid", "token": token}, status.HTTP_200_OK)
+        except jwt.ExpiredSignatureError as identifier:
+            return Response({"error": "Token is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+        except jwt.exceptions.DecodeError as identifier: 
+            return Response({"error": "Token is invalid, please request a new one."}, 
+                            status=status.HTTP_400_BAD_REQUEST)
 
     def patch(self, request, *args, **kwargs):
         """Override the patch method and reset user's password."""
@@ -152,3 +168,20 @@ class PasswordResetFormAPIView(generics.GenericAPIView):
         if serializer.is_valid(raise_exception=True):
             return Response({"success": "Your password was changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class VerfiyEmailAPIView(generics.GenericAPIView):
+#     """Take token, and verify and activate account."""
+#     def get(self, request, token, *args, **kwargs):
+#         try:
+#             payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
+#             user = User.objects.get(id=payload['user_id'])
+#             if not user.is_verified:
+#                 user.is_verified = True
+#                 user.save()
+#             return Response({"success": "You email was verfied successfully"}, status.HTTP_200_OK)
+#         except jwt.ExpiredSignatureError as identifier:
+#             return Response({"error": "Activation Expired."}, status=status.HTTP_400_BAD_REQUEST)
+#         except jwt.exceptions.DecodeError as identifier: 
+#             return Response({"error": "Token is invalid, please request a new one."}, 
+#                             status=status.HTTP_400_BAD_REQUEST)        
