@@ -251,7 +251,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     """Product list model serializer."""
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description",]
+        fields = ["id", "name", "slug", "description", 'max_price', 'discount_price', 'thumbnail']
         read_only_fields = ['slug']      
 
 
@@ -261,7 +261,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description", "details", "category", "variants",
+        fields = ["id", "name", "slug", "description", "details", "category", 
+                'max_price', 'discount_price', 'thumbnail', "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
 

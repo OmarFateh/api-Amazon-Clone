@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -6,6 +7,11 @@ from customer.models import Customer
 from merchant.models import Merchant
 from category.models import Category
 from category.fields import TitleCharField
+
+
+def product_thumbnail(instance, filename):
+    """Upload the product thumbnail image into the path and return the uploaded image path."""   
+    return f'products/{instance.category}/{instance.name}/{filename}'
 
 
 def product_variant_image(instance, filename):
@@ -69,6 +75,9 @@ class Product(ProductCommonData):
     name = models.CharField(max_length=64)
     slug = models.SlugField(unique=True, null=True, blank=True)
     description = models.CharField(max_length=255)
+    max_price = models.DecimalField(max_digits=10, decimal_places=2)
+    discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    thumbnail = models.ImageField(upload_to=product_thumbnail, null=True)
     details = models.TextField()
 
     objects = ProductManager()
@@ -78,6 +87,14 @@ class Product(ProductCommonData):
     def __str__(self):
         # Return product's name.
         return f"{self.name}"
+
+    @property
+    def actual_price(self):
+        # Return discount price if exists and if not, get max price. 
+        if self.discount_price:
+            return self.discount_price
+        else:
+            return self.max_price    
 
 
 class ProductVariant(ProductCommonData):
