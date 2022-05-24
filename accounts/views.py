@@ -55,7 +55,7 @@ class RequestVerfiyEmailAPIView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class VerfiyEmailAPIView(generics.GenericAPIView):
+class VerfiyEmailAPIView(APIView):
     """Take token, and verify and activate account."""
     def get(self, request, token, *args, **kwargs):
         try:
@@ -110,8 +110,10 @@ class PassowordChangeAPIView(generics.UpdateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class RequestPasswordResetEmailAPIView(APIView):
+class RequestPasswordResetEmailAPIView(generics.GenericAPIView):
     """Request password reset email API view."""
+    serializer_class = RequestPasswordResetEmailSerializer
+    permission_classes = [AnonPermissionOnly]
 
     def post(self, request, *args, **kwargs):
         """Override the post method and request password reset email."""
@@ -168,20 +170,4 @@ class PasswordResetFormAPIView(generics.GenericAPIView):
         if serializer.is_valid(raise_exception=True):
             return Response({"success": "Your password was changed successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# class VerfiyEmailAPIView(generics.GenericAPIView):
-#     """Take token, and verify and activate account."""
-#     def get(self, request, token, *args, **kwargs):
-#         try:
-#             payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
-#             user = User.objects.get(id=payload['user_id'])
-#             if not user.is_verified:
-#                 user.is_verified = True
-#                 user.save()
-#             return Response({"success": "You email was verfied successfully"}, status.HTTP_200_OK)
-#         except jwt.ExpiredSignatureError as identifier:
-#             return Response({"error": "Activation Expired."}, status=status.HTTP_400_BAD_REQUEST)
-#         except jwt.exceptions.DecodeError as identifier: 
-#             return Response({"error": "Token is invalid, please request a new one."}, 
-#                             status=status.HTTP_400_BAD_REQUEST)        
+       
