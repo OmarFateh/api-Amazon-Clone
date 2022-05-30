@@ -68,10 +68,21 @@ class ProductManager(models.Manager):
             return self.get_queryset().filter(category__in=category.get_descendants(include_self=True)) 
 
 
+class Brand(BaseTimestamp):
+    """Brand model."""
+    name = models.CharField(max_length=64)
+    slug = models.SlugField(unique=True, null=True, blank=True)
+    
+    def __str__(self):
+        # Return brand's name.
+        return f"{self.name}"
+
+
 class Product(ProductCommonData):
     """Product model."""
     merchant = models.ForeignKey(Merchant, related_name='products', on_delete=models.CASCADE)
     category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
+    brand = models.ForeignKey(Brand, related_name='products', on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=64)
     slug = models.SlugField(unique=True, null=True, blank=True)
     description = models.CharField(max_length=255)

@@ -1,9 +1,10 @@
 from django.contrib import admin
 
-from .models import Product, Attribute, AttributeValue, ProductVariant, ProductVariantImage, Question, Answer, Review, Wishlist
+from .models import *
 
 
 # models admin site registeration.
+admin.site.register(Brand)
 admin.site.register(Product)
 admin.site.register(Attribute)
 admin.site.register(AttributeValue) 
