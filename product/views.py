@@ -43,7 +43,7 @@ class ProductCreateAPIView(generics.CreateAPIView):
         serializer.save(merchant=self.request.user.merchant)
 
     def get_serializer_context(self, *args, **kwargs):
-        return {"is_update":False}
+        return {"is_update":False, "request":self.request}
 
 
 class ProductUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -64,7 +64,7 @@ class ProductUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
         return obj
 
     def get_serializer_context(self, *args, **kwargs):
-        return {"is_update":True, 'product_obj': self.get_object()}
+        return {"is_update":True, 'product_obj': self.get_object(), "request":self.request}
 
 
 ###

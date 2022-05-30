@@ -257,14 +257,20 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Product detail model serializer."""
+    thumbnail_url = serializers.SerializerMethodField()
     variants = ProductVariantSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model  = Product
         fields = ["id", "name", "slug", "description", "details", "category", 
-                'max_price', 'discount_price', 'thumbnail', "variants",
+                'max_price', 'discount_price', 'thumbnail_url', "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
+
+    def get_thumbnail_url(self, car):
+        request = self.context.get('request')
+        thumbnail_url = car.thumbnail.url
+        return request.build_absolute_uri(thumbnail_url)
 
     # def validate_discount_price(self, value):
     #     """Validate that discount price is not greater than max price."""
