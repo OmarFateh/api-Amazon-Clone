@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
@@ -6,6 +7,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib.auth.password_validation import validate_password
 
+import jwt
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
@@ -190,22 +192,27 @@ class PasswordResetSerializer(serializers.Serializer):
     new_password1 = serializers.CharField(
         label='New Password', write_only=True)
     token = serializers.CharField(label='Token', write_only=True)
-    uidb64 = serializers.CharField(label='UIDB64', write_only=True)
+    # uidb64 = serializers.CharField(label='UIDB64', write_only=True)
 
     class Meta:
-        fields = ['new_password1', 'token', 'uidb64']
+        fields = ['new_password1', 'token']
 
     def validate(self, data):
         """Validate entered data."""
         try:
             password = data.get("new_password1")
             token = data.get("token")
-            uidb64 = data.get("uidb64")
+            # uidb64 = data.get("uidb64")
             # get user by id.
-            user_id = force_str(urlsafe_base64_decode(uidb64))
-            user = get_object_or_404(User, id=user_id)
+            # decode the user's id and get the user by id.
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
+            user = User.objects.get(id=payload['user_id'])
+
+            # user_id = force_str(urlsafe_base64_decode(uidb64))
+            # user = get_object_or_404(User, id=user_id)
             # check if the token is valid.
-            if not PasswordResetTokenGenerator().check_token(user, token):
+            if not user:
+            # if not PasswordResetTokenGenerator().check_token(user, token):
                 raise AuthenticationFailed('The reset link is invalid.', 401)
             # set new password
             user.set_password(password)

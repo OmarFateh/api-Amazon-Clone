@@ -148,26 +148,26 @@ class PasswordResetFormAPIView(generics.GenericAPIView):
     """Password reset form API view."""
     serializer_class = PasswordResetSerializer
 
-    def get(self, request, uidb64, token, *args, **kwargs):
-        """Check if the token is valid, and return it and uidb64."""
-        try:
-            # decode the user's id and get the user by id.
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
-            user = User.objects.get(id=payload['user_id'])
-            # check if the token is valid.
-            if not user:
-                return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
-            return Response({"success": "Credintials are Valid", "token": token}, status.HTTP_200_OK)
-        except jwt.ExpiredSignatureError as identifier:
-            return Response({"error": "Token is invalid."}, status=status.HTTP_400_BAD_REQUEST)
-        except jwt.exceptions.DecodeError as identifier: 
-            return Response({"error": "Token is invalid, please request a new one."}, 
-                            status=status.HTTP_400_BAD_REQUEST)
+    # def get(self, request, token, *args, **kwargs):
+    #     """Check if the token is valid, and return it."""
+    #     try:
+    #         # decode the user's id and get the user by id.
+    #         payload = jwt.decode(token, settings.SECRET_KEY, algorithms='HS256')
+    #         user = User.objects.get(id=payload['user_id'])
+    #         # check if the token is valid.
+    #         if not user:
+    #             return Response({"error": "Token is invalid, please request a new one."}, status=status.HTTP_401_UNAUTHORIZED)
+    #         return Response({"success": "Credintials are Valid", "token": token}, status.HTTP_200_OK)
+    #     except jwt.ExpiredSignatureError as identifier:
+    #         return Response({"error": "Token is invalid."}, status=status.HTTP_400_BAD_REQUEST)
+    #     except jwt.exceptions.DecodeError as identifier: 
+    #         return Response({"error": "Token is invalid, please request a new one."}, 
+    #                         status=status.HTTP_400_BAD_REQUEST)
 
-    def patch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         """Override the patch method and reset user's password."""
         serializer = PasswordResetSerializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
-            return Response({"success": "Your password was changed successfully."}, status=status.HTTP_200_OK)
+            return Response({"success": "Your password was changed successfully."}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
        
