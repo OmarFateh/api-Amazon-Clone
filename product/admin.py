@@ -4,7 +4,6 @@ from .models import *
 
 
 # models admin site registeration.
-admin.site.register(Brand)
 admin.site.register(Product)
 admin.site.register(Attribute)
 admin.site.register(AttributeValue) 

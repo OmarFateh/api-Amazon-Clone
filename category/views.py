@@ -12,9 +12,9 @@ class CategoryListAPIView(generics.ListAPIView):
     """Category list API view."""
     queryset = Category.objects.root_nodes()
     serializer_class = CategoryListSerializer
+    
 
-
-class CategroyCreateAPIView(generics.CreateAPIView):
+class CategoryCreateAPIView(generics.CreateAPIView):
     """
     Category create API view.
     Only the admin can create it.
@@ -24,10 +24,10 @@ class CategroyCreateAPIView(generics.CreateAPIView):
     serializer_class = CategorySerializer
 
     def get_serializer_context(self, *args, **kwargs):
-        return {"is_create": True}
+        return {"is_create": True, "request":self.request}
 
 
-class CategroyUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+class CategoryUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     """
     Category update delete API view.
     Only the admin can update or delete it.
@@ -37,7 +37,7 @@ class CategroyUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = CategorySerializer
 
     def get_serializer_context(self, *args, **kwargs):
-        return {"category": self.get_object(), "is_create":False}
+        return {"category": self.get_object(), "is_create":False, "request":self.request}
 
     def get_object(self, *args, **kwargs):
         # get category slug from the requested url.

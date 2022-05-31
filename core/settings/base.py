@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'useradmin',
     'customer',
     'merchant',
+    'brand',
     'category',
     'product',
     'order',

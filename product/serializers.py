@@ -249,11 +249,18 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 ###
 class ProductListSerializer(serializers.ModelSerializer):
     """Product list model serializer."""
+    thumbnail_url = serializers.SerializerMethodField()
+
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description", 'max_price', 'discount_price', 'thumbnail']
+        fields = ["id", "name", "slug", "description", 'max_price', 'discount_price', 'thumbnail_url']
         read_only_fields = ['slug']      
 
+    def get_thumbnail_url(self, obj):
+        request = self.context.get('request')
+        thumbnail_url = obj.thumbnail.url
+        return request.build_absolute_uri(thumbnail_url)
+        
 
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Product detail model serializer."""
@@ -262,14 +269,14 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = Product
-        fields = ["id", "name", "slug", "description", "details", "category", 
+        fields = ["id", "name", "slug", "description", "details", "category", "brand",
                 'max_price', 'discount_price', 'thumbnail_url', "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
 
-    def get_thumbnail_url(self, car):
+    def get_thumbnail_url(self, obj):
         request = self.context.get('request')
-        thumbnail_url = car.thumbnail.url
+        thumbnail_url = obj.thumbnail.url
         return request.build_absolute_uri(thumbnail_url)
 
     # def validate_discount_price(self, value):

@@ -12,16 +12,22 @@ from .models import Category
 
 class CategorySerializer(serializers.ModelSerializer, ChildrenCategoriesMixin, TimestampMixin):
     """Category model serializer."""
+    thumbnail_url = serializers.SerializerMethodField()
     root_category = serializers.SerializerMethodField()
     parent_id = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     products = serializers.SerializerMethodField()
 
     class Meta:
         model  = Category
-        fields = ["id", "name", "slug", "thumbnail", "description", 'parent_id', "root_category", 
+        fields = ["id", "name", "slug", "thumbnail_url", "description", 'parent_id', "root_category", 
                 "children_categories", "products", "updated_at", "created_at"]
         read_only_fields = ['slug']
         extra_kwargs = {"parent_id": {'write_only': True}}
+
+    def get_thumbnail_url(self, obj):
+        request = self.context.get('request')
+        thumbnail_url = obj.thumbnail.url
+        return request.build_absolute_uri(thumbnail_url)
 
     def get_root_category(self, obj):
         if not obj.is_root_node():
@@ -33,7 +39,7 @@ class CategorySerializer(serializers.ModelSerializer, ChildrenCategoriesMixin, T
         # get all products of descendants categories of this category
         products = Product.objects.get_descendants_products(obj)
         if products:
-            return ProductListSerializer(products, many=True).data
+            return ProductListSerializer(products, many=True, context=self.context).data
         else:
             return None    
 

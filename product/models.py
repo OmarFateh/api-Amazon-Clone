@@ -1,12 +1,12 @@
-from email.policy import default
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 from useradmin.models import BaseTimestamp
-from customer.models import Customer
+# from customer.models import Customer
 from merchant.models import Merchant
 from category.models import Category
 from category.fields import TitleCharField
+from brand.models import Brand
 
 
 def product_thumbnail(instance, filename):
@@ -62,20 +62,14 @@ class ProductManager(models.Manager):
         If ids is given, get all products ids of descendants categories of this category.
         """
         if ids:
-            return self.get_queryset().filter(category__in=category.get_descendants(
+            return self.get_queryset().select_related('category').filter(category__in=category.get_descendants(
                                             include_self=True)).values_list('id', flat=True).distinct()
         else:
-            return self.get_queryset().filter(category__in=category.get_descendants(include_self=True)) 
+            return self.get_queryset().select_related('category').filter(category__in=category.get_descendants(include_self=True)) 
 
-
-class Brand(BaseTimestamp):
-    """Brand model."""
-    name = models.CharField(max_length=64)
-    slug = models.SlugField(unique=True, null=True, blank=True)
-    
-    def __str__(self):
-        # Return brand's name.
-        return f"{self.name}"
+    def get_brand_products(self, brand):
+        """Take brand, and get all products of this brand."""
+        return self.get_queryset().select_related('brand').filter(brand=brand) 
 
 
 class Product(ProductCommonData):
@@ -105,7 +99,7 @@ class Product(ProductCommonData):
         if self.discount_price:
             return self.discount_price
         else:
-            return self.max_price    
+            return self.max_price
 
 
 class ProductVariant(ProductCommonData):
