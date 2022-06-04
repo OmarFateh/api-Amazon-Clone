@@ -284,6 +284,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'max_price', 'discount_price', 'thumbnail', 'thumbnail_url', "images", "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
+        depth = 1
         extra_kwargs = {"thumbnail": {'write_only': True}}
 
     def get_thumbnail_url(self, obj):

@@ -15,6 +15,9 @@ class Brand(BaseTimestamp):
     slug = models.SlugField(unique=True, null=True, blank=True)
     thumbnail = models.ImageField(upload_to=brand_thumbnail, null=True)
     
+    class Meta:
+        ordering = ['-created_at']
+        
     def __str__(self):
         # Return brand's name.
         return f"{self.name}"

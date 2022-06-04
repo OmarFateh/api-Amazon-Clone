@@ -21,7 +21,7 @@ class CategorySerializer(serializers.ModelSerializer, ChildrenCategoriesMixin, T
         model  = Category
         fields = ["id", "name", "slug", "thumbnail", "thumbnail_url", "description", 'parent_id', "root_category", 
                 "children_categories", "products", "updated_at", "created_at"]
-        read_only_fields = ['slug']
+        read_only_fields = ['slug', 'thumbnail_url']
         extra_kwargs = {"parent_id": {'write_only': True}, "thumbnail": {'write_only': True}}
 
     def get_thumbnail_url(self, obj):
