@@ -15,8 +15,9 @@ class BrandSerializer(serializers.ModelSerializer, TimestampMixin):
 
     class Meta:
         model  = Brand
-        fields = ["id", "name", "slug", "thumbnail_url", "products", "updated_at", "created_at"]
+        fields = ["id", "name", "slug", "thumbnail", "thumbnail_url", "products", "updated_at", "created_at"]
         read_only_fields = ['slug']
+        extra_kwargs = {"thumbnail": {'write_only': True}}
 
     def get_thumbnail_url(self, obj):
         request = self.context.get('request')

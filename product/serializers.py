@@ -1,3 +1,4 @@
+from itertools import product
 from django.shortcuts import get_object_or_404
 from django.db import transaction
 from django.db.models import Sum
@@ -9,7 +10,7 @@ from accounts.serializers import UserSerializer
 from customer.serializers import CustomerDetailSerializer
 from .mixins import TimestampMixin
 from .utils import compare_max_discount_price
-from .models import (Product, Attribute, AttributeValue, ProductVariant, 
+from .models import (Product, Attribute, AttributeValue, ProductVariant, ProductImage,
                         ProductVariantImage, Question, Answer, Review, Wishlist)
 
 
@@ -108,7 +109,7 @@ class ProductVariantImageSerializer(serializers.ModelSerializer, TimestampMixin)
 
     class Meta:
         model  = ProductVariantImage
-        fields = ["id", "image_id", "image", "is_thumbnail", "is_active", "updated_at", "created_at"]
+        fields = ["id", "image_id", "image", "is_default", "is_active", "updated_at", "created_at"]
 
 
 class ProductVariantSerializer(serializers.ModelSerializer):
@@ -120,7 +121,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model  = ProductVariant
         fields = ["id", "variant_id", "variant", "variants",  "images", "max_price", "discount_price", 
-                "total_in_stock", "is_in_stock", "is_active"]
+                "total_in_stock", "is_in_stock", "is_default", "is_active"]
         extra_kwargs = {'variant': {'write_only': True}}
 
     def get_variants(self, obj):
@@ -262,32 +263,43 @@ class ProductListSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(thumbnail_url)
         
 
+class ProductImageSerializer(serializers.ModelSerializer, TimestampMixin):
+    """Product image model serializer."""
+    image_id = serializers.IntegerField(min_value=1, write_only=True, required=False)
+
+    class Meta:
+        model  = ProductImage
+        fields = ["id", "image_id", "image", "is_default", "is_active", "updated_at", "created_at"]
+
+
 class ProductDetailSerializer(serializers.ModelSerializer):
     """Product detail model serializer."""
     thumbnail_url = serializers.SerializerMethodField()
+    images = ProductImageSerializer(required=False, many=True)
     variants = ProductVariantSerializer(many=True, required=False, allow_null=True)
 
     class Meta:
         model  = Product
         fields = ["id", "name", "slug", "description", "details", "category", "brand",
-                'max_price', 'discount_price', 'thumbnail_url', "variants",
+                'max_price', 'discount_price', 'thumbnail', 'thumbnail_url', "images", "variants",
                 "total_in_stock", "is_in_stock", "is_active", "updated_at", "created_at"]
         read_only_fields = ['slug']
+        extra_kwargs = {"thumbnail": {'write_only': True}}
 
     def get_thumbnail_url(self, obj):
         request = self.context.get('request')
         thumbnail_url = obj.thumbnail.url
         return request.build_absolute_uri(thumbnail_url)
 
-    # def validate_discount_price(self, value):
-    #     """Validate that discount price is not greater than max price."""
-    #     is_update = self.context['is_update']
-    #     max_price = self.get_initial().get('max_price')
-    #     discount_price = value
-    #     product_obj = self.context.get('product_obj')
-    #     if compare_max_discount_price(max_price, discount_price, is_update, instance=product_obj):
-    #         raise serializers.ValidationError("Discount price can't be greater than maximum price.")
-    #     return value
+    def validate_discount_price(self, value):
+        """Validate that discount price is not greater than max price."""
+        is_update = self.context['is_update']
+        max_price = self.get_initial().get('max_price')
+        discount_price = value
+        product_obj = self.context.get('product_obj')
+        if compare_max_discount_price(max_price, discount_price, is_update, instance=product_obj):
+            raise serializers.ValidationError("Discount price can't be greater than maximum price.")
+        return value
 
     def validate(self, data):
         """Validate than total in stock of variants are not greater than total of stock of product."""
@@ -312,6 +324,19 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             # get all variant's total in stock excluding the entered ones            
             variants_total_in_stock += product_obj.variants.exclude(id__in=entered_variants_ids_list).aggregate(
                     total=Coalesce(Sum('total_in_stock'), 0))['total']
+            # images
+            images = data.get('images')
+            if images:
+                for image in images:
+                    if 'image_id' not in image.keys() and 'image' not in image.keys():
+                        raise serializers.ValidationError({"images": {"image": "No file was submitted."}})                        
+                    # image id
+                    if 'image_id' in image.keys():
+                        images_ids_list = []
+                        for obj in product_obj.images.all():
+                            images_ids_list.extend(obj.images.values_list('id', flat=True))
+                        if image['image_id'] not in images_ids_list:
+                            raise serializers.ValidationError({"images": {"image_id": "This product does not have this image id."}})        
         else:
             if variants:
                 for variant in variants:
@@ -325,6 +350,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         """Create new product with variants & images for variant attributes."""
+        images = None
+        if 'images' in validated_data.keys():
+            images = validated_data.pop('images')
+        # variants
         if 'variants' in validated_data.keys():  
             variants_data = validated_data.pop('variants')
             product_obj = Product.objects.create(**validated_data)
@@ -332,12 +361,32 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 ProductVariantSerializer.create(ProductVariantSerializer(context={"product_id": product_obj.id}), 
                                     validated_data=variant)
         else:
-            product_obj = Product.objects.create(**validated_data)                            
+            product_obj = Product.objects.create(**validated_data)  
+        # images
+        if images:
+            for image in images:
+                if 'image_id' in image.keys():
+                    image_id= image.pop('image_id')
+                ProductImage.objects.create(**image, product=product_obj)                              
         return product_obj
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        """Update product & variants of nested serializer."""
+        """Update product & images & variants of nested serializer."""
+        # update images
+        if 'images' in validated_data.keys():
+            images = validated_data.pop('images')
+            for image in images:
+                # update existing images
+                if 'image_id' in image.keys():
+                    image_obj = get_object_or_404(ProductImage, id=image['image_id'])
+                    for key, value in image.items():
+                        setattr(image_obj, key, value)
+                    image_obj.save()    
+                # create new ones
+                else:
+                    new_obj = ProductImage.objects.create(**image, product=instance)
+        # update variants
         if 'variants' in validated_data.keys():
             variants_data = validated_data.pop('variants')
             for data in variants_data:

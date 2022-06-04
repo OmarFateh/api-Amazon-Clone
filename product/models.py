@@ -14,6 +14,11 @@ def product_thumbnail(instance, filename):
     return f'products/{instance.category}/{instance.name}/{filename}'
 
 
+def product_image(instance, filename):
+    """Upload the product image into the path and return the uploaded image path."""   
+    return f'products/{instance.product.category}/{instance.product.name}/{filename}'
+
+
 def product_variant_image(instance, filename):
     """Upload the product variant image into the path and return the uploaded image path."""   
     return f'products/{instance.variant.product.category}/{instance.variant.product}/{filename}'
@@ -102,12 +107,33 @@ class Product(ProductCommonData):
             return self.max_price
 
 
+class ProductImage(BaseTimestamp):
+    """Product image model."""
+    product = models.ForeignKey(Product, related_name="images", on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=product_image)
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['product']
+
+    def __str__(self):
+        # Return product.
+        return f"{self.product}"
+
+    @property
+    def merchant(self):
+        # Return product's merchant 
+        return self.product.merchant
+
+
 class ProductVariant(ProductCommonData):
     """This model holds the values for price and combination of attributes for a product."""
     max_price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     product = models.ForeignKey(Product, related_name='variants', on_delete=models.CASCADE)
     variant =  models.ManyToManyField(AttributeValue)
+    is_default = models.BooleanField(default=False)
         
     def __str__(self):
         # Return product's name
@@ -140,10 +166,10 @@ class ProductVariant(ProductCommonData):
 
 
 class ProductVariantImage(BaseTimestamp):
-    """Product image model."""
+    """Product variant image model."""
     variant = models.ForeignKey(ProductVariant, related_name="images", on_delete=models.CASCADE)
     image = models.ImageField(upload_to=product_variant_image)
-    is_thumbnail = models.BooleanField(default=False)
+    is_default = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     
     # objects = ProductImageManager()
