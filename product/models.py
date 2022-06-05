@@ -87,7 +87,7 @@ class Product(ProductCommonData):
     description = models.CharField(max_length=255)
     max_price = models.DecimalField(max_digits=10, decimal_places=2)
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    thumbnail = models.ImageField(upload_to=product_thumbnail, null=True)
+    thumbnail = models.ImageField(upload_to=product_thumbnail, default='default.jpg')
     details = models.TextField()
 
     objects = ProductManager()
