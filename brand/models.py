@@ -13,7 +13,7 @@ class Brand(BaseTimestamp):
     """Brand model."""
     name = TitleCharField(max_length=64, title=True)
     slug = models.SlugField(unique=True, null=True, blank=True)
-    thumbnail = models.ImageField(upload_to=brand_thumbnail, null=True)
+    thumbnail = models.ImageField(upload_to=brand_thumbnail, default='default.jpg')
     
     class Meta:
         ordering = ['-created_at']
