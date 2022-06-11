@@ -11,4 +11,4 @@ class ChildrenCategoriesMixin(serializers.Serializer):
         if obj.get_children():
             return ChildrenCategorySerializer(obj.get_children(), many=True, context=self.context).data
         else:
-            return None
+            return []

@@ -30,7 +30,7 @@ class BrandSerializer(serializers.ModelSerializer, TimestampMixin):
         if products:
             return ProductListSerializer(products, many=True, context=self.context).data
         else:
-            return None    
+            return []
 
 
     # def validate(self, data):

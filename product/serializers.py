@@ -30,7 +30,7 @@ class AttributeSerializer(serializers.ModelSerializer, TimestampMixin):
         if values:
             return AttributeValueSerializer(values, many=True).data
         else:
-            return None
+            return []
 
     def validate_name(self, value):
         """Validate that attribute name is unique."""
@@ -130,7 +130,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
         if variants:
             return VariantAttributeValueSerializer(variants, many=True).data
         else:
-            return None 
+            return []
 
     def validate(self, data):
         """
@@ -427,7 +427,7 @@ class QuestionSerializer(serializers.ModelSerializer, TimestampMixin):
         if obj.answers.exists():
             return AnswerSerializer(obj.answers.all(), many=True, context=self.context).data
         else:
-            return None
+            return []
 
 
 ###
